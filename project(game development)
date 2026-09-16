@@ -1,0 +1,143 @@
+import pygame
+import random
+import sys
+
+pygame.init()
+
+# Screen
+WIDTH = 500
+HEIGHT = 700
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("🚗 Car Racing Game")
+
+clock = pygame.time.Clock()
+
+# Colors
+GREEN = (30, 150, 50)
+GRAY = (60, 60, 60)
+WHITE = (255, 255, 255)
+RED = (220, 40, 40)
+BLUE = (40, 100, 220)
+BLACK = (0, 0, 0)
+
+# Road
+road_x = 100
+road_width = 300
+
+# Player car
+player = pygame.Rect(225, 580, 50, 90)
+player_speed = 7
+
+# Enemy cars
+enemies = []
+enemy_speed = 6
+
+# Score
+score = 0
+font = pygame.font.Font(None, 40)
+
+# Road lines
+lines = []
+for y in range(0, HEIGHT, 100):
+    lines.append(pygame.Rect(245, y, 10, 60))
+
+
+def create_enemy():
+    x = random.randint(road_x + 20, road_x + road_width - 70)
+    return pygame.Rect(x, -100, 50, 90)
+
+
+running = True
+game_over = False
+
+while running:
+
+    clock.tick(60)
+
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+
+    if not game_over:
+
+        # Keyboard controls
+        keys = pygame.key.get_pressed()
+
+        if keys[pygame.K_LEFT] and player.left > road_x:
+            player.x -= player_speed
+
+        if keys[pygame.K_RIGHT] and player.right < road_x + road_width:
+            player.x += player_speed
+
+        # Move road lines
+        for line in lines:
+            line.y += enemy_speed
+
+            if line.top > HEIGHT:
+                line.y = -60
+
+        # Create enemies
+        if random.randint(1, 40) == 1:
+            enemies.append(create_enemy())
+
+        # Move enemies
+        for enemy in enemies:
+            enemy.y += enemy_speed
+
+        # Remove enemies and increase score
+        for enemy in enemies[:]:
+            if enemy.top > HEIGHT:
+                enemies.remove(enemy)
+                score += 1
+
+        # Collision
+        for enemy in enemies:
+            if player.colliderect(enemy):
+                game_over = True
+
+    # Drawing
+    screen.fill(GREEN)
+
+    # Road
+    pygame.draw.rect(screen, GRAY, (road_x, 0, road_width, HEIGHT))
+
+    # Road lines
+    for line in lines:
+        pygame.draw.rect(screen, WHITE, line)
+
+    # Player car
+    pygame.draw.rect(screen, BLUE, player)
+    pygame.draw.rect(screen, BLACK,
+                     (player.x + 8, player.y + 10, 34, 20))
+
+    # Enemy cars
+    for enemy in enemies:
+        pygame.draw.rect(screen, RED, enemy)
+        pygame.draw.rect(screen, BLACK,
+                         (enemy.x + 8, enemy.y + 10, 34, 20))
+
+    # Score
+    score_text = font.render("Score: " + str(score), True, WHITE)
+    screen.blit(score_text, (20, 20))
+
+    # Game Over
+    if game_over:
+        text = font.render("GAME OVER!", True, WHITE)
+        restart = font.render("Press R to restart", True, WHITE)
+
+        screen.blit(text, (165, 300))
+        screen.blit(restart, (130, 350))
+
+        keys = pygame.key.get_pressed()
+
+        if keys[pygame.K_r]:
+            player.x = 225
+            player.y = 580
+            enemies.clear()
+            score = 0
+            game_over = False
+
+    pygame.display.update()
+
+pygame.quit()
+sys.exit()
